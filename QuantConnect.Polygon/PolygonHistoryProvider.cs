@@ -209,7 +209,7 @@ namespace QuantConnect.Lean.DataSource.Polygon
             // Trades API gets timestamps in nanoseconds
             var start = Time.DateTimeToUnixTimeStampNanoseconds(request.StartTimeUtc.RoundDown(resolutionTimeSpan));
             var end = Time.DateTimeToUnixTimeStampNanoseconds(request.EndTimeUtc.RoundDown(resolutionTimeSpan));
-            var ticker = _symbolMapper.GetBrokerageSymbol(request.Symbol);
+            var ticker = _symbolMapper.GetBrokerageSymbol(request.Symbol, true);
             var tickTypeStr = request.TickType == TickType.Trade ? "trades" : "quotes";
 
             var resource = $"v3/{tickTypeStr}/{ticker}";
