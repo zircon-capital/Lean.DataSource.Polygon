@@ -3,6 +3,7 @@
 		<Configuration Condition=" '$(Configuration)' == '' ">Release</Configuration>
 		<Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
 		<TargetFramework>net10.0</TargetFramework>
+		<LeanRoot Condition="'$(LeanRoot)' == ''">$(MSBuildThisFileDirectory)../../Lean</LeanRoot>
 		<IsPackable>false</IsPackable>
 		<TestProjectType>UnitTest</TestProjectType>
 		<OutputPath>bin\$(Configuration)\</OutputPath>
@@ -27,7 +28,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\QuantConnect.Polygon\QuantConnect.DataSource.Polygon.csproj" />
-		<ProjectReference Include="..\..\Lean\Tests\QuantConnect.Tests.csproj" />
+		<ProjectReference Include="$(LeanRoot)/Tests/QuantConnect.Tests.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

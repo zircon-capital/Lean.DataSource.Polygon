@@ -98,6 +98,7 @@ namespace QuantConnect.Lean.DataSource.Polygon.Tests
 
         [TestCase("GOOGL", "2014/4/1", "2016/4/1", Resolution.Daily, Description = "The stock split on July 15 2022. [GOOG -> GOOGL]")]
         [TestCase("GOOGL", "2014/4/1", "2014/4/4", Resolution.Hour)]
+        [Explicit("Requires a Massive API key and network access.")]
         public void GetsRenamedSymbolHistoricalData(string ticker, DateTime startDateTime, DateTime endDateTime, Resolution resolution)
         {
             var symbol = Symbol.Create(ticker, SecurityType.Equity, Market.USA);

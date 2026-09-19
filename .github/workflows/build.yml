@@ -1,0 +1,20 @@
+name: Build & Test
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: connector
+      - uses: actions/checkout@v4
+        with:
+          repository: QuantConnect/Lean
+          ref: f78c35d7c88c3ea0be9fbd1aeabce3d4ee2347f5
+          path: Lean
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - run: dotnet test connector/QuantConnect.Polygon.Tests/QuantConnect.DataSource.Polygon.Tests.csproj -c Release '-p:WarningsNotAsErrors=NU1901%3BNU1902%3BNU1903%3BNU1904'

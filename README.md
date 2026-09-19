@@ -1,3 +1,27 @@
+# Zircon Polygon/Massive connector fork
+
+Based on QuantConnect/Lean.DataSource.Polygon at
+`9bc2adc9e0f730eb3c1a46991e2749a5c3b35b31`.
+
+This fork removes the QuantConnect entitlement request and its machine/network
+metadata collection. Massive authentication and data entitlements remain required.
+Equities, options, indices, streaming, history and upstream tests are retained.
+This is a Zircon-maintained fork, not an official QuantConnect release.
+
+Build against the same LEAN source as the execution container, currently
+`f78c35d7c88c3ea0be9fbd1aeabce3d4ee2347f5`:
+
+```sh
+dotnet test QuantConnect.Polygon.Tests/QuantConnect.DataSource.Polygon.Tests.csproj -c Release -p:LeanRoot=/absolute/path/to/Lean
+```
+
+Network-dependent tests remain explicit, including the upstream rename-history
+test that previously lacked that annotation. Keep the checkout next to a `Lean`
+checkout (or symlink) so the upstream test data paths resolve. A passing offline suite does not establish
+live reconnect, subscription or price-freshness behavior; those need a paper soak.
+
+---
+
 # Lean Polygon.io Data Source Plugin
 
 [![Build Status](https://github.com/QuantConnect/Lean.DataSource.Polygon/workflows/Build%20%26%20Test/badge.svg)](https://github.com/QuantConnect/Lean.DataSource.Polygon/actions?query=workflow%3A%22Build%20%26%20Test%22)

@@ -2,10 +2,6 @@
   "data-folder": "../../../../Lean/Data/",
   "data-directory": "../../../../Lean/Data/",
 
-  "job-user-id": "0",
-  "api-access-token": "",
-  "job-organization-id": "",
-
   "polygon-api-key": "",
   "polygon-license-type": "Individual",
   "polygon-api-url": "https://api.polygon.io",
