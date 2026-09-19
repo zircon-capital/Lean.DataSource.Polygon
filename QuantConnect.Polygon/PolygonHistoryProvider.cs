@@ -32,11 +32,6 @@ namespace QuantConnect.Lean.DataSource.Polygon
         private volatile bool _invalidStartTimeErrorFired;
 
         /// <summary>
-        /// Indicates whether an error has been fired due to invalid conditions if the TickType is <seealso cref="TickType.Quote"/> and the <seealso cref="Resolution"/> is greater than one second.
-        /// </summary>
-        private volatile bool _invalidTickTypeAndResolutionErrorFired;
-
-        /// <summary>
         /// Gets the total number of data points emitted by this history provider
         /// </summary>
         public override int DataPointCount => _dataPointCount;
@@ -69,18 +64,6 @@ namespace QuantConnect.Lean.DataSource.Polygon
                 {
                     _unsupportedTickTypeMessagedLogged = true;
                     Log.Trace($"PolygonDataProvider.GetHistory(): Unsupported tick type: {TickType.OpenInterest}");
-                }
-                return null;
-            }
-
-            // Quote data can only be fetched from Polygon from their Quote Tick endpoint,
-            // which would be too slow for anything above second resolution or long time spans.
-            if (request.TickType == TickType.Quote && request.Resolution > Resolution.Second)
-            {
-                if (!_invalidTickTypeAndResolutionErrorFired)
-                {
-                    _invalidTickTypeAndResolutionErrorFired = true;
-                    Log.Error("PolygonDataProvider.GetHistory(): Quote data above second resolution is not supported.");
                 }
                 return null;
             }
@@ -148,6 +131,14 @@ namespace QuantConnect.Lean.DataSource.Polygon
                     yield return consolidatedData;
                     consolidatedData = null;
                 }
+            }
+
+            // Flush the last complete interval without emitting a partial bar.
+            consolidator.Scan(request.EndTimeUtc.ConvertFromUtc(request.ExchangeHours.TimeZone));
+            if (consolidatedData != null)
+            {
+                Interlocked.Increment(ref _dataPointCount);
+                yield return consolidatedData;
             }
 
             consolidator.DataConsolidated -= onDataConsolidated;
@@ -224,6 +215,7 @@ namespace QuantConnect.Lean.DataSource.Polygon
             var resource = $"v3/{tickTypeStr}/{ticker}";
             var parameters = new Dictionary<string, string>
             {
+                ["limit"] = "50000",
                 ["timestamp.gte"] = start.ToString(),
                 ["timestamp.lt"] = end.ToString(),
                 ["order"] = "asc"
