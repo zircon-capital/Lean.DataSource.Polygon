@@ -1,4 +1,4 @@
-/*
+﻿/*
  * QUANTCONNECT.COM - Democratizing Finance, Empowering Individuals.
  * Lean Algorithmic Trading Engine v2.0. Copyright 2014 QuantConnect Corporation.
  *
@@ -65,9 +65,12 @@ namespace QuantConnect.Lean.DataSource.Polygon.Tests
                 yield return new TestCaseData(SPY, Resolution.Hour, TimeSpan.FromDays(180), TickType.Trade);
                 yield return new TestCaseData(SPY, Resolution.Daily, TimeSpan.FromDays(3650), TickType.Trade);
 
-                // Quotes (Only Tick and Second resolutions are supported)
+                // Historical quotes
                 yield return new TestCaseData(SPY, Resolution.Tick, TimeSpan.FromMinutes(5), TickType.Quote);
                 yield return new TestCaseData(SPY, Resolution.Second, TimeSpan.FromMinutes(5), TickType.Quote);
+                yield return new TestCaseData(SPY, Resolution.Minute, TimeSpan.FromMinutes(5), TickType.Quote);
+                yield return new TestCaseData(SPY, Resolution.Hour, TimeSpan.FromDays(1), TickType.Quote);
+                yield return new TestCaseData(SPY, Resolution.Daily, TimeSpan.FromDays(1), TickType.Quote);
 
                 var SPY_Option = Symbol.CreateOption(Symbols.SPY, Market.USA, OptionStyle.American, OptionRight.Call, 469m, new DateTime(2023, 12, 15));
 
@@ -77,7 +80,7 @@ namespace QuantConnect.Lean.DataSource.Polygon.Tests
                 yield return new TestCaseData(SPY_Option, Resolution.Hour, TimeSpan.FromDays(180), TickType.Trade);
                 yield return new TestCaseData(SPY_Option, Resolution.Daily, TimeSpan.FromDays(3650), TickType.Trade);
 
-                // Quotes (Only Tick and Second resolutions are supported)
+                // Historical quotes
                 yield return new TestCaseData(SPY_Option, Resolution.Tick, TimeSpan.FromMinutes(5), TickType.Quote);
                 yield return new TestCaseData(SPY_Option, Resolution.Second, TimeSpan.FromMinutes(5), TickType.Quote);
             }
@@ -255,10 +258,6 @@ namespace QuantConnect.Lean.DataSource.Polygon.Tests
             // Supported security type and resolution, unsupported tick type
             new TestCaseData(Symbols.SPY_C_192_Feb19_2016, Resolution.Minute, TickType.OpenInterest),
 
-            // Supported security type unsupported resolution and tick type combination
-            new TestCaseData(Symbols.SPY, Resolution.Minute, TickType.Quote),
-            new TestCaseData(Symbols.SPY, Resolution.Hour, TickType.Quote),
-            new TestCaseData(Symbols.SPY, Resolution.Daily, TickType.Quote),
         };
 
         [TestCaseSource(nameof(UssuportedSecurityTypesResolutionsAndTickTypesTestCases))]

@@ -91,6 +91,9 @@ namespace QuantConnect.Lean.DataSource.Polygon
                 yield return result;
 
                 requestUri = result.NextUrl;
+                if (requestUri != null && (!Uri.TryCreate(requestUri, UriKind.Absolute, out var next)
+                    || next.Scheme != _httpClient.BaseAddress.Scheme || next.Authority != _httpClient.BaseAddress.Authority))
+                    throw new InvalidDataException("Polygon pagination changed API origin.");
             }
         }
 
@@ -184,6 +187,9 @@ namespace QuantConnect.Lean.DataSource.Polygon
             {
                 throw new ArgumentException($"{nameof(PolygonRestApiClient)}.{nameof(ParseResponse)}: Unable to parse response. Response: {responseContent}");
             }
+
+            if (!string.Equals(result.Status, "OK", StringComparison.OrdinalIgnoreCase))
+                throw new InvalidDataException($"Polygon response status: {result.Status ?? "missing"}.");
 
             return result;
         }

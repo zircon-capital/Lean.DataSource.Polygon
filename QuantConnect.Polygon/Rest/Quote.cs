@@ -25,8 +25,11 @@ namespace QuantConnect.Lean.DataSource.Polygon
         /// <summary>
         /// Quote timestamp in nanoseconds
         /// </summary>
-        [JsonProperty("participant_timestamp")]
+        [JsonProperty("sip_timestamp")]
         public override long Timestamp { get; set; }
+
+        [JsonProperty("conditions")]
+        public int[] Conditions { get; set; } = Array.Empty<int>();
 
         /// <summary>
         /// The exchange ID

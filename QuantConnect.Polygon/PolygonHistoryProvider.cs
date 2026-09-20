@@ -110,7 +110,7 @@ namespace QuantConnect.Lean.DataSource.Polygon
             else
             {
                 consolidator = request.Resolution != Resolution.Tick
-                    ? new TickQuoteBarConsolidator(request.Resolution.ToTimeSpan())
+                    ? new ObservedQuoteBarConsolidator(request.Resolution.ToTimeSpan())
                     : FilteredIdentityDataConsolidator.ForTickType(request.TickType);
                 history = GetQuotes(request);
             }
@@ -118,12 +118,16 @@ namespace QuantConnect.Lean.DataSource.Polygon
             BaseData? consolidatedData = null;
             DataConsolidatedHandler onDataConsolidated = (s, e) =>
             {
+                if (e is QuoteBar quote && (quote.Bid == null || quote.Ask == null))
+                    return;
                 consolidatedData = (BaseData)e;
             };
             consolidator.DataConsolidated += onDataConsolidated;
 
             foreach (var data in history)
             {
+                if (!request.ExchangeHours.IsOpen(data.Time, request.IncludeExtendedMarketHours))
+                    continue;
                 consolidator.Update(data);
                 if (consolidatedData != null)
                 {
@@ -205,10 +209,8 @@ namespace QuantConnect.Lean.DataSource.Polygon
             where TResponse : BaseResultsResponse<TTick>
             where TTick : ResponseTick
         {
-            var resolutionTimeSpan = request.Resolution.ToTimeSpan();
-            // Trades API gets timestamps in nanoseconds
-            var start = Time.DateTimeToUnixTimeStampNanoseconds(request.StartTimeUtc.RoundDown(resolutionTimeSpan));
-            var end = Time.DateTimeToUnixTimeStampNanoseconds(request.EndTimeUtc.RoundDown(resolutionTimeSpan));
+            var start = Time.DateTimeToUnixTimeStampNanoseconds(request.StartTimeUtc);
+            var end = Time.DateTimeToUnixTimeStampNanoseconds(request.EndTimeUtc);
             var ticker = _symbolMapper.GetBrokerageSymbol(request.Symbol, true);
             var tickTypeStr = request.TickType == TickType.Trade ? "trades" : "quotes";
 
@@ -218,15 +220,44 @@ namespace QuantConnect.Lean.DataSource.Polygon
                 ["limit"] = "50000",
                 ["timestamp.gte"] = start.ToString(),
                 ["timestamp.lt"] = end.ToString(),
-                ["order"] = "asc"
+                ["order"] = "asc",
+                ["sort"] = "timestamp"
             };
 
+            long previousTimestamp = long.MinValue;
             foreach (var tick in RestApiClient.DownloadAndParseData<TResponse>(resource, parameters)
                                              .SelectMany(response => response.Results))
             {
+                if (tick is Quote && (tick.Timestamp < previousTimestamp || tick.Timestamp < start || tick.Timestamp >= end))
+                    throw new InvalidDataException($"Unordered or out-of-range {tickTypeStr} for {ticker}.");
+                previousTimestamp = tick.Timestamp;
+                var unusable = tick is Quote quote && (quote.Conditions?.Contains(19) == true
+                    || quote.BidPrice <= 0 || quote.AskPrice <= 0 || quote.BidPrice > quote.AskPrice
+                    || quote.BidSize <= 0 || quote.AskSize <= 0);
+                if (unusable && request.Resolution == Resolution.Tick)
+                    continue;
                 var utcTime = Time.UnixNanosecondTimeStampToDateTime(tick.Timestamp);
                 var time = GetTickTime(request.Symbol, utcTime);
-                yield return tickFactory(time, request.Symbol, tick);
+                var result = tickFactory(time, request.Symbol, tick);
+                result.Suspicious = unusable;
+                yield return result;
+            }
+        }
+
+        // A new bar must contain observed prices, without carrying the previous bar's close.
+        private sealed class ObservedQuoteBarConsolidator(TimeSpan period) : TickQuoteBarConsolidator(period)
+        {
+            protected override void AggregateBar(ref QuoteBar workingBar, Tick data)
+            {
+                workingBar ??= new QuoteBar(GetRoundedBarTime(data), data.Symbol,
+                    null, 0, null, 0, Period);
+                if (data.Suspicious)
+                {
+                    workingBar.Bid = null;
+                    workingBar.Ask = null;
+                    return;
+                }
+                workingBar.Update(0, data.BidPrice, data.AskPrice, 0, data.BidSize, data.AskSize);
             }
         }
 

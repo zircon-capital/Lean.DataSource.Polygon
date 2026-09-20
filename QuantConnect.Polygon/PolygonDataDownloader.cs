@@ -78,7 +78,7 @@ namespace QuantConnect.Lean.DataSource.Polygon
             else
             {
                 var historyRequest = new HistoryRequest(startUtc, endUtc, dataType, symbol, resolution, exchangeHours, dataTimeZone, resolution,
-                    true, false, DataNormalizationMode.Raw, tickType);
+                    resolution < Resolution.Hour, false, DataNormalizationMode.Raw, tickType);
 
                 var historyData = _historyProvider.GetHistory(historyRequest);
 
