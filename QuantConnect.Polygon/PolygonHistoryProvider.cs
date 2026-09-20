@@ -118,7 +118,7 @@ namespace QuantConnect.Lean.DataSource.Polygon
             BaseData? consolidatedData = null;
             DataConsolidatedHandler onDataConsolidated = (s, e) =>
             {
-                if (e is QuoteBar quote && (quote.Bid == null || quote.Ask == null))
+                if (consolidator is ObservedQuoteBarConsolidator quotes && !quotes.LastQuoteUsable)
                     return;
                 consolidatedData = (BaseData)e;
             };
@@ -247,16 +247,15 @@ namespace QuantConnect.Lean.DataSource.Polygon
         // A new bar must contain observed prices, without carrying the previous bar's close.
         private sealed class ObservedQuoteBarConsolidator(TimeSpan period) : TickQuoteBarConsolidator(period)
         {
+            public bool LastQuoteUsable { get; private set; }
+
             protected override void AggregateBar(ref QuoteBar workingBar, Tick data)
             {
                 workingBar ??= new QuoteBar(GetRoundedBarTime(data), data.Symbol,
                     null, 0, null, 0, Period);
-                if (data.Suspicious)
-                {
-                    workingBar.Bid = null;
-                    workingBar.Ask = null;
+                LastQuoteUsable = !data.Suspicious;
+                if (!LastQuoteUsable)
                     return;
-                }
                 workingBar.Update(0, data.BidPrice, data.AskPrice, 0, data.BidSize, data.AskSize);
             }
         }
